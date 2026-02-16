@@ -11,7 +11,7 @@ from requests.exceptions import ChunkedEncodingError, ConnectionError, Timeout
 from yandex_music import Client
 from yandex_music.exceptions import NetworkError, TimedOutError
 
-from models import DownloadedTrack
+from .models import DownloadedTrack
 
 logger = logging.getLogger(__name__)
 

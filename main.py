@@ -4,10 +4,10 @@ from pathlib import Path
 
 from aiogram import Bot, Dispatcher
 
-from config import ADMIN_IDS, TELEGRAM_BOT_TOKEN, YANDEX_MUSIC_TOKEN
-from handlers import setup_handlers
-from music_service import YandexMusicService
-from stats_store import StatsStore
+from bot.config import ADMIN_IDS, TELEGRAM_BOT_TOKEN, YANDEX_MUSIC_TOKEN
+from bot.handlers import setup_handlers
+from bot.music_service import YandexMusicService
+from bot.stats_store import StatsStore
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",

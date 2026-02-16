@@ -8,10 +8,10 @@ from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError, Teleg
 from aiogram.filters import Command
 from aiogram.types import FSInputFile, Message
 
-from config import ADMIN_IDS
-from models import DownloadedTrack
-from music_service import YandexMusicService
-from stats_store import StatsStore
+from .config import ADMIN_IDS
+from .models import DownloadedTrack
+from .music_service import YandexMusicService
+from .stats_store import StatsStore
 
 logger = logging.getLogger(__name__)
 
