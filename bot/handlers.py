@@ -113,7 +113,7 @@ async def handle_text(message: Message, stats_store: StatsStore, music_service: 
     downloaded_track: Optional[DownloadedTrack] = None
     try:
         downloaded_track = await music_service.download_track_from_url(url)
-        caption = f"{downloaded_track.artist} - {downloaded_track.title}"
+        caption = f"{downloaded_track.title} - {downloaded_track.artist}"
         audio = FSInputFile(path=str(downloaded_track.file_path), filename=downloaded_track.title)
         await message.answer_audio(
             audio=audio,
