@@ -6,7 +6,7 @@ from aiogram import Bot, Dispatcher
 
 from bot.config import ADMIN_IDS, TELEGRAM_BOT_TOKEN, YANDEX_MUSIC_TOKEN
 from bot.handlers import setup_handlers
-from bot.music_service import YandexMusicService
+from bot.music_service import MusicService
 from bot.stats_store import StatsStore
 
 logging.basicConfig(
@@ -38,7 +38,7 @@ async def main() -> None:
     stats_store = StatsStore(STATS_FILE)
     await stats_store.load()
 
-    music_service = YandexMusicService(YANDEX_MUSIC_TOKEN)
+    music_service = MusicService(YANDEX_MUSIC_TOKEN)
     await music_service.init()
 
     bot = Bot(token=TELEGRAM_BOT_TOKEN)

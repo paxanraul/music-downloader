@@ -10,7 +10,7 @@ from aiogram.types import FSInputFile, Message
 
 from .config import ADMIN_IDS
 from .models import DownloadedTrack
-from .music_service import YandexMusicService
+from .music_service import MusicService
 from .stats_store import StatsStore
 
 logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ async def start_command(message: Message, stats_store: StatsStore) -> None:
         )
     text = (
         '<tg-emoji emoji-id="5402356576696688014">👋</tg-emoji> '
-        "Привет! Отправь ссылку на трек из Яндекс Музыки и я скину тебе его файлом."
+        "Привет! Отправь ссылку на трек из Яндекс Музыки или SoundCloud, и я скину его файлом."
     )
     await message.answer(text, parse_mode="HTML")
 
@@ -94,13 +94,13 @@ async def broadcast_command(message: Message, stats_store: StatsStore, bot: Bot)
     )
 
 
-async def handle_text(message: Message, stats_store: StatsStore, music_service: YandexMusicService) -> None:
+async def handle_text(message: Message, stats_store: StatsStore, music_service: MusicService) -> None:
     if not message.text or not message.from_user:
         return
 
     url = message.text.strip()
     if not music_service.is_track_url(url):
-        await message.answer("Пришли корректную ссылку на трек из Яндекс Музыки.")
+        await message.answer("Пришли корректную ссылку на трек из Яндекс Музыки или SoundCloud.")
         return
 
     await stats_store.register_request(

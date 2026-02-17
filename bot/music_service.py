@@ -8,6 +8,7 @@ from typing import Optional
 
 import requests
 from requests.exceptions import ChunkedEncodingError, ConnectionError, Timeout
+import yt_dlp
 from yandex_music import Client
 from yandex_music.exceptions import NetworkError, TimedOutError
 
@@ -18,9 +19,10 @@ logger = logging.getLogger(__name__)
 TRACK_URL_RE = re.compile(
     r"(?:https?://)?(?:music\.)?yandex\.(?:ru|com)/(?:album/\d+/track/|track/)(\d+)"
 )
+SOUNDCLOUD_URL_RE = re.compile(r"(?:https?://)?(?:www\.)?(?:soundcloud\.com|snd\.sc)/\S+", re.IGNORECASE)
 
 
-class YandexMusicService:
+class MusicService:
     def __init__(self, token: str) -> None:
         self.token = token
         self.client: Optional[Client] = None
@@ -33,7 +35,7 @@ class YandexMusicService:
 
     @staticmethod
     def is_track_url(url: str) -> bool:
-        return bool(TRACK_URL_RE.search(url))
+        return bool(TRACK_URL_RE.search(url) or SOUNDCLOUD_URL_RE.search(url))
 
     @staticmethod
     def _extract_track_id(url: str) -> Optional[str]:
@@ -74,6 +76,11 @@ class YandexMusicService:
                 await asyncio.sleep(1.2 * attempt)
 
     async def download_track_from_url(self, url: str) -> DownloadedTrack:
+        if SOUNDCLOUD_URL_RE.search(url):
+            return await self.download_soundcloud_track(url)
+        return await self.download_yandex_track(url)
+
+    async def download_yandex_track(self, url: str) -> DownloadedTrack:
         if self.client is None:
             raise RuntimeError("Yandex client is not initialized")
 
@@ -98,9 +105,51 @@ class YandexMusicService:
         artist = ", ".join(a.name for a in (track.artists or [])) or "Unknown artist"
         return DownloadedTrack(file_path=file_path, title=track.title, artist=artist)
 
+    async def download_soundcloud_track(self, url: str) -> DownloadedTrack:
+        info = await self._run_with_retries("get_soundcloud_info", self._extract_soundcloud_info, url)
+        title = info.get("title") or "soundcloud_track"
+        artist = info.get("uploader") or info.get("artist") or "Unknown artist"
+        download_url = self._pick_soundcloud_audio_url(info)
+        if not download_url:
+            raise ValueError("Не удалось получить аудио-поток из SoundCloud для этой ссылки.")
+
+        tmp_dir = Path(tempfile.gettempdir())
+        safe_title = re.sub(r"[^\w\s.-]", "_", title).strip() or "soundcloud_track"
+        file_path = tmp_dir / f"{safe_title}_{int(time.time())}"
+        await asyncio.to_thread(self._download_file, download_url, file_path)
+        return DownloadedTrack(file_path=file_path, title=title, artist=artist)
+
     def _get_track(self, track_id: str):
         tracks = self.client.tracks([track_id])
         return tracks[0] if tracks else None
+
+    @staticmethod
+    def _extract_soundcloud_info(url: str) -> dict:
+        ydl_opts = {
+            "quiet": True,
+            "no_warnings": True,
+            "skip_download": True,
+            "noplaylist": True,
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+        if isinstance(info, dict) and info.get("entries"):
+            entries = info["entries"] or []
+            info = entries[0] if entries else {}
+        return info or {}
+
+    @staticmethod
+    def _pick_soundcloud_audio_url(info: dict) -> Optional[str]:
+        direct = info.get("url")
+        if direct:
+            return direct
+
+        formats = info.get("formats") or []
+        audio_formats = [fmt for fmt in formats if fmt.get("acodec") not in (None, "none")]
+        if not audio_formats:
+            return None
+        best = max(audio_formats, key=lambda fmt: fmt.get("abr") or 0)
+        return best.get("url")
 
     @staticmethod
     def _get_best_download_url(track) -> Optional[str]:
