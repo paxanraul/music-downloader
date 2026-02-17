@@ -26,7 +26,7 @@ async def start_command(message: Message, stats_store: StatsStore) -> None:
             username=message.from_user.username or "",
         )
     text = (
-        '<tg-emoji emoji-id="5402356576696688014">👋</tg-emoji>'
+        '<tg-emoji emoji-id="5402356576696688014">👋</tg-emoji> '
         '<tg-emoji emoji-id="5289811111938383893">🎵</tg-emoji> '
         "Привет! Отправь ссылку на трек из Яндекс Музыки или SoundCloud, и я скину его файлом."
     )
